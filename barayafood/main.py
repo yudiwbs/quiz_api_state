@@ -127,7 +127,8 @@ async def login(user: schemas.UserCreate, db: Session = Depends(get_db)):
     user_login = crud.get_user_by_username(db,user.username)
     if user_login:
         access_token  = create_access_token(user.username)
-        return {"access_token": access_token}
+        user_id = user_login.id
+        return {"user_id":user_id,"access_token": access_token}
     else:
         raise HTTPException(status_code=400, detail="User tidak ditemukan, kontak admin")
 
