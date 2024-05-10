@@ -1,3 +1,16 @@
+# package: fastapi, bcrypt, sqlalchemy, python-jose
+
+# test lokal uvicorn main:app --host 0.0.0.0 --port 8000 --reload --
+
+
+# kalau deploy di server: pip install gunicorn
+# gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --daemon
+
+# mematikan gunicorn (saat mau update):
+# ps ax|grep gunicorn 
+# pkill gunicorn
+
+
 from os import path
 from fastapi import Depends, Request, FastAPI, HTTPException
 
