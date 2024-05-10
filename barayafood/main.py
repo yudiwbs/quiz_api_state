@@ -71,6 +71,27 @@ async def init(db: Session = Depends(get_db)):
     i.price = 17000
     crud.create_item(db,i)
 
+    i = schemas.ItemCreate
+    i.title = "Kupat Tahu"
+    i.description = "Kupat Tahu dengan kuah melimpah"
+    i.img_name = "kupat_tahu.png"
+    i.price = 5000
+    crud.create_item(db,i)
+
+    i = schemas.ItemCreate
+    i.title = "Pecel Lele"
+    i.description = "Pecel lele dengan ikan lele yang segar"
+    i.img_name = "pecel_lele.png"
+    i.price = 11000
+    crud.create_item(db,i)
+
+    i = schemas.ItemCreate
+    i.title = "Ayam Geprek"
+    i.description = "Pecel lele dengan ikan lele yang segar"
+    i.img_name = "ayam_geprek.png"
+    i.price = 11000
+    crud.create_item(db,i)
+
     return {"message": "OK"}
 
 
