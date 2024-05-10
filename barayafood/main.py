@@ -27,10 +27,22 @@ models.BaseDB.metadata.create_all(bind=engine)
 from jose import jwt
 import datetime
 
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
+
 
 app = FastAPI(title="Web service BarayaFood",
     description="Web service untuk quiz provis Mei 2024",
     version="0.0.1",)
+
+app.add_middleware(
+ CORSMiddleware,
+ allow_origins=["*"],
+ allow_credentials=True,
+ allow_methods=["*"],
+ allow_headers=["*"],
+)
+
 
 # Dependency
 def get_db():
