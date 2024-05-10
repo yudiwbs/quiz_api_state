@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 import models, schemas
 import bcrypt
+from sqlalchemy import desc
 
 SALT = b'$2b$12$0nFckzktMD0Fb16a8JsNA.'
 
@@ -24,7 +25,7 @@ def hashPassword(passwd: str):
     pwd_hash = bcrypt.hashpw(bytePwd, SALT)
     return pwd_hash
 
-############  untuk keranjang
+############  untuk cart
 def create_cart(db: Session, cart: schemas.Cart):
     db_cart = models.Cart(user_id = cart.user_id, item_id = cart.item_id, quantity = cart.quantity )
     db.add(db_cart)
@@ -44,11 +45,59 @@ def delete_cart_by_userid(db: Session, id_user:int):
     db.commit()
     return {"record_dihapus":hasil} 
 
+# semua belanja semua user, untuk debug, jangan digunakan
+# def get_carts(db: Session, skip: int = 0, limit: int = 100):
+#     return db.query(models.Cart).offset(skip).limit(limit).all()
 
-def get_carts(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Cart).offset(skip).limit(limit).all()
+def get_carts_by_userid(db: Session, user_id:int, skip: int = 0, limit: int = 100 ):
+    return db.query(models.Cart).filter(models.Cart.user_id == user_id).offset(skip).limit(limit).all()
 
-###
+# true kalau keranjang kosong
+def get_is_carts_empty_userid(db: Session, user_id:int):
+    exists = db.query(models.Cart.id).filter(models.Cart.user_id == user_id).exists()
+    if db.query(exists).scalar():
+        return False
+    else:
+        return True
+
+
+# ============
+# status dan pembayaran
+
+
+def pembayaran (db: Session, user_id:int):
+    status = get_last_status(db,user_id=user_id)
+    # hanya proses yang statusnya belum_bayar, selain itu abaikan 
+    temp = status["status"]
+    if temp.status=="belum_bayar":
+        insert_status(db=db,user_id=user_id,status="sudah_bayar")
+        return {"status":"status diupdate sudah bayar"}
+    else:
+        return {"status":"tidak diproses, cek status"}
+
+def insert_status(db:Session, user_id:int, status: str):
+    db_status = models.Status(user_id = user_id, status = status )
+    db.add(db_status)
+    db.commit()
+    db.refresh(db_status)
+    return db_status
+
+#   keranjang_kosong, belum_bayar, bayar, (pesanan_diterima atau pesanan_batal), pesanan_diproses, pesanaan_diantar, 
+def get_last_status(db: Session,user_id:int):
+    last_status = db.query(models.Status).order_by(desc(models.Status.timestamp)).first()
+    if last_status:
+        return {"status":last_status}
+    else:
+        #tidak ada status, cek cart
+        if get_is_carts_empty_userid(db,user_id=user_id):
+            #kosong, update status
+            insert_status(db,user_id=user_id,status="keranjang_kosong")
+            return get_last_status(db,user_id=user_id)
+       
+
+#==============
+
+######### user
 
 def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = hashPassword(user.password)
@@ -90,12 +139,6 @@ def delete_all_item(db: Session):
     jum_rec = db.query(models.Item).delete()
     db.commit()
     return jum_rec
-
-
-# ============
-# status
-def delete_all_item(db: Session):
-    ast_status = session.query(Status).order_by(desc(Status.created_at)).first()
 
 
 

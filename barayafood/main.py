@@ -83,6 +83,22 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return crud.create_user(db=db, user=user)
 
 
+# hasil adalah akses token    
+@app.post("/login") #,response_model=schemas.Token
+async def login(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    if not authenticate(db,user):
+        raise HTTPException(status_code=400, detail="Username atau password tidak cocock")
+
+    # ambil informasi username
+    user_login = crud.get_user_by_username(db,user.username)
+    if user_login:
+        access_token  = create_access_token(user.username)
+        return {"access_token": access_token}
+    else:
+        raise HTTPException(status_code=400, detail="User tidak ditemukan, kontak admin")
+
+
+
 # untuk debug saja, nanti rolenya admin?
 # @app.get("/users/", response_model=list[schemas.User])
 # def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db),token: str = Depends(oauth2_scheme) ):
@@ -106,11 +122,20 @@ def create_item_user_cart(
     usr =  verify_token(token) #bisa digunakan untuk mengecek apakah user cocok (tdk boleh akses data user lain)
     return crud.create_cart(db=db, cart=cart)
 
-@app.get("/carts/", response_model=list[schemas.Cart])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
+# untuk semua isi cart, hanya untuk debug
+# @app.get("/carts/", response_model=list[schemas.Cart])
+# def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
+#     usr =  verify_token(token) #bisa digunakan untuk mengecek apakah user cocok (tdk boleh akses data user lain)
+#     carts = crud.get_carts(db, skip=skip, limit=limit)
+#     return carts
+
+@app.get("/carts/{user_id}", response_model=list[schemas.Cart])
+def read_users(user_id:int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
     usr =  verify_token(token) #bisa digunakan untuk mengecek apakah user cocok (tdk boleh akses data user lain)
-    carts = crud.get_carts(db, skip=skip, limit=limit)
+    carts = crud.get_carts_by_userid(db, user_id=user_id,skip=skip, limit=limit)
     return carts
+
+
 
 # hapus item cart berdasarkan id
 @app.delete("/carts/{cart_id}")
@@ -157,11 +182,53 @@ def cari_item(keyword:str,  db: Session = Depends(get_db),token: str = Depends(o
     return crud.get_item_by_keyword(db,keyword)
 
 ###################  status
+
+#status diset manual dulu karena cukup rumit kalau ditangani constraitnya
+
+#keranjang terisi --> user checkout dan siap bayar
+@app.post("/set_status_harap_bayar/{user_id}")
+def set_status_harap_bayar(user_id:int,  db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
+    return crud.insert_status(db=db,user_id=user_id,status="belum_bayar")
+
+#user membayar
+@app.post("/pembayaran/{user_id}")
+def bayar(user_id:int,  db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
+    return crud.pembayaran(db=db,user_id=user_id)
+
+
+#user sudah bayar --> penjual menerima 
+@app.post("/set_status_penjual_terima/{user_id}")
+def set_status_penjual_terima(user_id:int,  db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
+    return crud.insert_status(db=db,user_id=user_id,status="pesanan_diterima")
+
+# user sudah bayar --> penjual menolak
+# isi keranjang dikosongkan
+@app.post("/set_status_penjual_tolak/{user_id}")
+def set_status_penjual_terima(user_id:int,  db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
+    # isi cart dikosongkan
+    crud.delete_cart_by_userid(db,user_id=user_id)
+    return crud.insert_status(db=db,user_id=user_id,status="pesanan_ditolak")
+
+
+# penjual menerima --> pesanan diantar
+@app.post("/set_status_diantar/{user_id}")
+def set_status_penjual_terima(user_id:int,  db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
+    return crud.insert_status(db=db,user_id=user_id,status="pesanaan_diantar")
+
+
+# pesanan diantar -->pesanan diterima
+@app.post("/set_status_diterima/{user_id}")
+def set_status_penjual_terima(user_id:int,  db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
+    #cart dikosongkan
+    #idealnya isi cart dipindahkan ke transaksi untuk arsip transaksi
+    crud.delete_cart_by_userid(db,user_id=user_id)
+    return crud.insert_status(db=db,user_id=user_id,status="pesanaan_diterima")
+
+
 @app.get("/get_status/{user_id}")
 def last_status(user_id:int,  db: Session = Depends(get_db),token: str = Depends(oauth2_scheme)):
     usr =  verify_token(token) #bisa digunakan untuk mengecek apakah user cocok (tdk boleh akses data user lain)
-    
-    return crud.get_item_by_keyword(db,keyword)
+    return crud.get_last_status(db,user_id)
 
 
 ######################## AUTH
@@ -208,20 +275,6 @@ def verify_token(token: str):
 
 
 
-# hasil adalah akses token    
-@app.post("/login",response_model=schemas.Token)
-async def login(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    if not authenticate(db,user):
-        raise HTTPException(status_code=400, detail="Username atau password tidak cocock")
-
-    # ambil informasi username
-    user_login = crud.get_user_by_username(db,user.username)
-    if user_login:
-        access_token  = create_access_token(user.username)
-        #refresh_token = create_refresh_token(usr.username,email,role,"","","",[""])  tidak perlu refresh token untuk sekarang
-        return {"access_token": access_token}
-    else:
-        raise HTTPException(status_code=400, detail="User tidak ditemukan, kontak admin")
     
 # internal untuk testing, jangan dipanggil langsung
 # untuk swagger  .../doc supaya bisa auth dengan tombol gembok di kanan atas

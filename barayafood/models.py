@@ -47,6 +47,7 @@ class Status(BaseDB):
     __tablename__ = 'status'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
-    status  = Column(String, nullable=False) # urutan: keranjang_kosong, belum_bayar, bayar, (pesanan_diterima atau pesanan_batal), pesanan_diproses, pesanaan_diantar, pesanan_selesai
+    status  = Column(String, nullable=False) # urutan: keranjang_kosong, belum_bayar, 
+    #bayar, (pesanan_diterima atau pesanan_batal), pesanaan_diantar, pesanan_selesai
     timestamp = Column(DateTime, nullable=False, server_default=func.now(),index=True)
     
