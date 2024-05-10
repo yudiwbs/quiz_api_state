@@ -40,8 +40,8 @@ def delete_cart_by_id(db: Session, id_cart:int):
 
 # ada hapus semua cart berdasarkan user
 # asumsikan kalau sudah selesai (sudah sampai ke user), isi cart dikosongkan
-def delete_cart_by_userid(db: Session, id_user:int):
-    hasil = db.query(models.Cart).filter(models.Cart.user_id == id_user).delete()
+def delete_cart_by_userid(db: Session, user_id:int):
+    hasil = db.query(models.Cart).filter(models.Cart.user_id == user_id).delete()
     db.commit()
     return {"record_dihapus":hasil} 
 

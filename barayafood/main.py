@@ -135,13 +135,19 @@ def read_users(user_id:int, skip: int = 0, limit: int = 100, db: Session = Depen
     carts = crud.get_carts_by_userid(db, user_id=user_id,skip=skip, limit=limit)
     return carts
 
-
-
 # hapus item cart berdasarkan id
 @app.delete("/carts/{cart_id}")
 def delete_item_user_cart(cart_id:int,db: Session = Depends(get_db),token: str = Depends(oauth2_scheme) ):
     usr =  verify_token(token) #bisa digunakan untuk mengecek apakah user cocok (tdk boleh akses data user lain)
     return crud.delete_cart_by_id(db,cart_id)
+
+
+# hapus item cart berdasarkan id
+@app.delete("/clear_whole_carts_by_userid/{user_id}")
+def delete_item_user_cart(user_id:int,db: Session = Depends(get_db),token: str = Depends(oauth2_scheme) ):
+    usr =  verify_token(token) #bisa digunakan untuk mengecek apakah user cocok (tdk boleh akses data user lain)
+    return crud.delete_cart_by_userid(db,user_id=user_id)
+
 
 #### ITEMS
 
@@ -222,7 +228,7 @@ def set_status_penjual_terima(user_id:int,  db: Session = Depends(get_db),token:
     #cart dikosongkan
     #idealnya isi cart dipindahkan ke transaksi untuk arsip transaksi
     crud.delete_cart_by_userid(db,user_id=user_id)
-    return crud.insert_status(db=db,user_id=user_id,status="pesanaan_diterima")
+    return crud.insert_status(db=db,user_id=user_id,status="pesanan_selesai")
 
 
 @app.get("/get_status/{user_id}")
