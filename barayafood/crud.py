@@ -84,7 +84,7 @@ def insert_status(db:Session, user_id:int, status: str):
 
 #   keranjang_kosong, belum_bayar, bayar, (pesanan_diterima atau pesanan_batal), pesanan_diproses, pesanaan_diantar, 
 def get_last_status(db: Session,user_id:int):
-    last_status = db.query(models.Status).order_by(desc(models.Status.timestamp)).first()
+    last_status = db.query(models.Status).filter(models.Status.user_id == user_id).order_by(desc(models.Status.timestamp)).first()
     if last_status:
         return {"status":last_status}
     else:

@@ -5,7 +5,6 @@
 
 # kalau deploy di server: pip install gunicorn
 # gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --daemon
-
 # mematikan gunicorn (saat mau update):
 # ps ax|grep gunicorn 
 # pkill gunicorn
@@ -65,7 +64,7 @@ async def root():
     return {"message": "Dokumentasi API: [url]:8000/docs"}
 
 # nanti disembunyikan, untuk iniisasi tambah user dan items, biar nggak manual setiap db diganti
-# hati2 menghapus data di tabel item dan user
+# hati2 ini menghapus data di tabel item dan user
 # @app.put("/init")
 # async def init(db: Session = Depends(get_db)):
 #     crud.delete_all_item(db)
